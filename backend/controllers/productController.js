@@ -100,8 +100,8 @@ export const createProduct = async (req, res, next) => {
   try {
     const { title, description, category, price, condition, location } = req.body;
 
-    // Get the local paths for the uploaded images (saved by Multer)
-    const images = (req.files || []).map((file) => `/uploads/${file.filename}`);
+    // Use Cloudinary secure URLs provided by multer-storage-cloudinary (`file.path`)
+    const images = (req.files || []).map((file) => file.path);
 
     const product = await Product.create({
       title,
@@ -121,7 +121,8 @@ export const createProduct = async (req, res, next) => {
 
     res.status(201).json({ success: true, message: "Product listed successfully", data: product });
   } catch (error) {
-    next(error);
+    console.error("PRODUCT CREATE ERROR:", error); // Yeh line exact error terminal par dikhayegi
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
 };
 
@@ -143,9 +144,9 @@ export const updateProduct = async (req, res, next) => {
       }
     });
 
-    // Add new images to the existing ones if any were uploaded
+    // Add new Cloudinary image URLs to the existing ones if any were uploaded
     if (req.files && req.files.length > 0) {
-      const newImages = req.files.map((file) => `/uploads/${file.filename}`);
+      const newImages = req.files.map((file) => file.path);
       product.images = [...product.images, ...newImages];
     }
 

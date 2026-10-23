@@ -11,12 +11,11 @@ import {
 } from "../controllers/productController.js";
 import { protect, isOwner } from "../middleware/auth.js";
 import { productRules, handleValidation } from "../middleware/validate.js";
-import upload from "../middleware/upload.js";
+import upload from "../middleware/cloudinary.js"; // Added cloudinary middleware, cuz local per hoo nhi payega
 
 const router = express.Router();
 
 // Private route: Get the logged-in student's own products
-// (This must stay above /:id, otherwise Express will think "user" is a product ID)
 router.get("/user/me", protect, getMyProducts);
 
 // Public routes: Anyone can search and view products

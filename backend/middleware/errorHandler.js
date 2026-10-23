@@ -6,8 +6,11 @@ export const notFound = (req, res, next) => {
 // Main error handler to catch all app errors so the server doesn't crash
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
-  // Print the error in the backend console for debugging
-  console.error(err.stack);
+  // Print the full error in the backend console so debugging mein kuch chhup na sake
+  console.error("FULL ERROR:", err);
+  if (err.stack) {
+    console.error(err.stack);
+  }
 
   let statusCode = err.statusCode || 500;
   let message = err.message || "Internal server error";
@@ -37,6 +40,6 @@ export const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message,
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    stack: process.env.NODE_ENV === "development" ? (err.stack || err) : undefined,
   });
 };
