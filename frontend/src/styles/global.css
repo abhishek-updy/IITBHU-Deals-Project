@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    /* Set global background to super dark green and text to light gray/greenish */
+    @apply bg-[#02120c] text-emerald-100/90 antialiased;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Bright Emerald Green selection color */
+  ::selection {
+    @apply bg-[#10b981]/30 text-white;
+  }
+}
+
+/* Custom modern scrollbar for the dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-[#02120c];
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-[#047857] rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-[#10b981];
+}
