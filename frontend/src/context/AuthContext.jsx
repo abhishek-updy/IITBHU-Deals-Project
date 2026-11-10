@@ -6,6 +6,7 @@ import {
   logoutUser,
   fetchProfile,
   updateProfile as updateProfileService,
+  verifyEmail as verifyEmailService,
 } from "../services/authService.js";
 
 export const AuthContext = createContext(null);
@@ -30,17 +31,31 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = useCallback(async (credentials) => {
-    const data = await loginUser(credentials);
-    setUser(data);
-    toast.success(`Welcome back, ${data.name.split(" ")[0]}!`);
-    return data;
+    const result = await loginUser(credentials);
+    if (result.requiresVerification) {
+      // Email not verified — throw so the Login page can redirect
+      const err = new Error(result.message);
+      err.requiresVerification = true;
+      err.email = result.email;
+      throw err;
+    }
+    setUser(result.data);
+    toast.success(`Welcome back, ${result.data.name.split(" ")[0]}!`);
+    return result.data;
   }, []);
 
   const register = useCallback(async (payload) => {
-    const data = await registerUser(payload);
-    setUser(data);
-    toast.success("Account created — welcome to IITBHU Deals!");
-    return data;
+    // Returns { success, message, email } — does NOT set user (not logged in yet)
+    const result = await registerUser(payload);
+    return result;
+  }, []);
+
+  // Called from VerifyEmail page after successful OTP check
+  const verifyAndLogin = useCallback(async (email, otp) => {
+    const result = await verifyEmailService({ email, otp });
+    setUser(result.data);
+    toast.success("Email verified! Welcome to IITBHU Deals 🎉");
+    return result.data;
   }, []);
 
   const logout = useCallback(async () => {
@@ -58,7 +73,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, isAuthenticated: !!user, login, register, logout, updateProfile }}
+      value={{ user, loading, isAuthenticated: !!user, login, register, verifyAndLogin, logout, updateProfile }}
     >
       {children}
     </AuthContext.Provider>

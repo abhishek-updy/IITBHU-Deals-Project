@@ -1,23 +1,27 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-
-// Central axios instance. withCredentials lets the httpOnly JWT cookie set by
-// the backend travel with every request, so the SPA stays logged in on refresh.
+// In development: VITE_API_BASE_URL is not set → falls back to "/api" (Vite proxy handles it)
+// In production:  VITE_API_BASE_URL is set to the real backend URL (e.g. https://api.iitbhu-deals.com/api)
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   withCredentials: true,
 });
 
 // Normalize error messages so components can just read err.message.
+// Also preserve extra fields like requiresVerification so auth flows work.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const data = error.response?.data || {};
     const message =
-      error.response?.data?.message ||
-      error.response?.data?.errors?.[0]?.message ||
+      data.message ||
+      data.errors?.[0]?.message ||
       "Something went wrong. Please try again.";
-    return Promise.reject(new Error(message));
+    const err = new Error(message);
+    // Preserve any extra fields sent by the backend (e.g. requiresVerification, email)
+    if (data.requiresVerification) err.requiresVerification = true;
+    if (data.email) err.email = data.email;
+    return Promise.reject(err);
   }
 );
 

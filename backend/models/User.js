@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
@@ -15,10 +16,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      // Restrict signup strictly to IIT (BHU) official emails
+      // Accept both @itbhu.ac.in and @iitbhu.ac.in — they are the same institution.
+      // The controller normalizes both to @itbhu.ac.in before saving.
       match: [
         /^[a-zA-Z0-9._%+-]+@(itbhu\.ac\.in|iitbhu\.ac\.in)$/,
-        "Only official IIT BHU email IDs are allowed",
+        "Only official IIT (BHU) email IDs are allowed (@itbhu.ac.in or @iitbhu.ac.in)",
       ],
     },
     phone: {
@@ -47,6 +49,30 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    // ── Email Verification ──────────────────────────────────────
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerifyOTP: {
+      type: String,
+      select: false,
+    },
+    emailVerifyOTPExpires: {
+      type: Date,
+      select: false,
+    },
+
+    // ── Password Reset ──────────────────────────────────────────
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false,
+    },
   },
   { timestamps: true }
 );
@@ -69,6 +95,23 @@ userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
   return obj;
+};
+
+// Generate a 6-digit OTP for email verification and store its hash
+userSchema.methods.createEmailVerifyOTP = function () {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  // Store hashed OTP in DB for security
+  this.emailVerifyOTP = crypto.createHash("sha256").update(otp).digest("hex");
+  this.emailVerifyOTPExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+  return otp; // Return the plain OTP to send via email
+};
+
+// Generate a secure password-reset token (URL-safe) and store its hash
+userSchema.methods.createPasswordResetToken = function () {
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  this.passwordResetToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+  this.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+  return rawToken; // Return raw token for the reset URL
 };
 
 const User = mongoose.model("User", userSchema);

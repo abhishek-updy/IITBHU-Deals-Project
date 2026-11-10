@@ -21,7 +21,12 @@ const Login = () => {
       await login(form);
       navigate(location.state?.from || "/browse");
     } catch (error) {
-      toast.error(error.message);
+      if (error.requiresVerification) {
+        // Redirect to OTP page so user can verify their email
+        navigate("/verify-email", { state: { email: error.email } });
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -59,9 +64,17 @@ const Login = () => {
             </div>
 
             <div>
-              <label className={labelClass} htmlFor="password">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelClass} htmlFor="password">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 id="password"
                 name="password"

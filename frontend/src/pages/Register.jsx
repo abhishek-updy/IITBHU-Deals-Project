@@ -34,8 +34,10 @@ const Register = () => {
 
     setLoading(true);
     try {
-      await register(form);
-      navigate("/browse");
+      const result = await register(form);
+      // After registration, go to OTP verification screen
+      navigate("/verify-email", { state: { email: result.email } });
+      toast.success("OTP sent! Please check your college email.");
     } catch (error) {
       toast.error(error.message);
     } finally {

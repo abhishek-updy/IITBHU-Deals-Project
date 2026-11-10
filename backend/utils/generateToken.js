@@ -11,7 +11,7 @@ const generateToken = (res, userId) => {
   res.cookie("token", token, {
     httpOnly: true, // Prevents frontend code from accessing the cookie for extra security
     secure: process.env.NODE_ENV === "production", // Requires HTTPS when deployed live
-    sameSite: "none", //lax kiya to deploy krne ke baad cookie send hi nhi hogi
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // lax works in dev via Vite proxy; none for cross-origin in production
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   });
 
