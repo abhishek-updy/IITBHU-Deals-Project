@@ -34,6 +34,7 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Price is required"],
       min: [0, "Price cannot be negative"],
+      max: [500000, "Price cannot exceed ₹5,00,000"],
     },
     condition: {
       type: String,

@@ -6,6 +6,7 @@ import MainLayout from "../layouts/MainLayout.jsx";
 import Button from "../components/Button.jsx";
 import { createProduct } from "../services/productService.js";
 import { CATEGORIES, CONDITIONS } from "../utils/constants.js";
+import { compressImage } from "../utils/compressImage.js";
 
 const INITIAL_FORM = {
   title: "",
@@ -27,12 +28,15 @@ const SellProduct = () => {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleFiles = (fileList) => {
-    const files = Array.from(fileList).slice(0, MAX_IMAGES - images.length);
-    if (files.length === 0) return;
+  const handleFiles = async (fileList) => {
+    const rawFiles = Array.from(fileList).slice(0, MAX_IMAGES - images.length);
+    if (rawFiles.length === 0) return;
 
-    setImages((prev) => [...prev, ...files]);
-    setPreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+    // Automatically compress heavy iPhone/Android photos in background
+    const compressedFiles = await Promise.all(rawFiles.map((f) => compressImage(f)));
+
+    setImages((prev) => [...prev, ...compressedFiles]);
+    setPreviews((prev) => [...prev, ...compressedFiles.map((f) => URL.createObjectURL(f))]);
   };
 
   const removeImage = (index) => {
@@ -145,6 +149,7 @@ const SellProduct = () => {
                 name="price"
                 type="number"
                 min="0"
+                max="500000"
                 className={inputClass}
                 placeholder="500"
                 value={form.price}

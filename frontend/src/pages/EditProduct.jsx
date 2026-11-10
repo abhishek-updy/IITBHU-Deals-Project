@@ -7,6 +7,7 @@ import Button from "../components/Button.jsx";
 import Loader from "../components/Loader.jsx";
 import { getProductById, updateProduct } from "../services/productService.js";
 import { CATEGORIES, CONDITIONS, resolveImageUrl } from "../utils/constants.js";
+import { compressImage } from "../utils/compressImage.js";
 
 const MAX_IMAGES = 6;
 
@@ -41,13 +42,16 @@ const EditProduct = () => {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleFiles = (fileList) => {
+  const handleFiles = async (fileList) => {
     const room = MAX_IMAGES - existingImages.length - newImages.length;
-    const files = Array.from(fileList).slice(0, Math.max(room, 0));
-    if (files.length === 0) return;
+    const rawFiles = Array.from(fileList).slice(0, Math.max(room, 0));
+    if (rawFiles.length === 0) return;
 
-    setNewImages((prev) => [...prev, ...files]);
-    setNewPreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+    // Automatically compress heavy iPhone/Android photos in background
+    const compressedFiles = await Promise.all(rawFiles.map((f) => compressImage(f)));
+
+    setNewImages((prev) => [...prev, ...compressedFiles]);
+    setNewPreviews((prev) => [...prev, ...compressedFiles.map((f) => URL.createObjectURL(f))]);
   };
 
   const removeNewImage = (index) => {
@@ -146,6 +150,7 @@ const EditProduct = () => {
                 name="price"
                 type="number"
                 min="0"
+                max="500000"
                 className={inputClass}
                 value={form.price}
                 onChange={handleChange}

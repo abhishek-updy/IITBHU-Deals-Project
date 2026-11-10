@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { FiPhone, FiUser, FiHome as FiDept, FiMapPin } from "react-icons/fi";
+import { FiPhone, FiUser, FiHome as FiDept, FiMapPin, FiLock } from "react-icons/fi";
 import MainLayout from "../layouts/MainLayout.jsx";
 import Loader from "../components/Loader.jsx";
 import EmptyState from "../components/EmptyState.jsx";
@@ -8,9 +8,11 @@ import ProductCard from "../components/ProductCard.jsx";
 import Button from "../components/Button.jsx";
 import { getProductById } from "../services/productService.js";
 import { resolveImageUrl } from "../utils/constants.js";
+import { useAuth } from "../hooks/useAuth.js";
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
   const [related, setRelated] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
@@ -156,7 +158,17 @@ const ProductDetails = () => {
                   <span className="flex items-center gap-2.5 text-emerald-400/80 text-sm font-medium">
                     <FiPhone size={16} /> Phone
                   </span>
-                  <span className="text-white font-semibold text-sm">{product.seller?.phone}</span>
+                  {isAuthenticated ? (
+                    <span className="text-white font-semibold text-sm">{product.seller?.phone}</span>
+                  ) : (
+                    <Link
+                      to="/login"
+                      state={{ from: `/products/${id}` }}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-4 transition-colors"
+                    >
+                      <FiLock size={12} /> Login to view
+                    </Link>
+                  )}
                 </div>
                 {product.location && (
                   <div className="flex justify-between items-center">
@@ -170,11 +182,23 @@ const ProductDetails = () => {
             </div>
 
             {/* CTA Button */}
-            <a href={isSold ? undefined : `tel:${product.seller?.phone}`} className={`block w-full ${isSold ? "cursor-not-allowed" : ""}`}>
-              <Button variant={isSold ? "outline" : "primary"} size="lg" block disabled={isSold} className="py-4 text-lg font-bold">
-                {isSold ? "Already Sold" : "Contact Seller"}
+            {isSold ? (
+              <Button variant="outline" size="lg" block disabled className="py-4 text-lg font-bold cursor-not-allowed">
+                Already Sold
               </Button>
-            </a>
+            ) : isAuthenticated ? (
+              <a href={`tel:${product.seller?.phone}`} className="block w-full">
+                <Button variant="primary" size="lg" block className="py-4 text-lg font-bold">
+                  Contact Seller
+                </Button>
+              </a>
+            ) : (
+              <Link to="/login" state={{ from: `/products/${id}` }} className="block w-full">
+                <Button variant="primary" size="lg" block className="py-4 text-lg font-bold">
+                  Login to Contact Seller
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 

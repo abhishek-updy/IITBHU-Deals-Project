@@ -12,6 +12,7 @@ import {
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 import { registerRules, loginRules, handleValidation } from "../middleware/validate.js";
+import { otpRateLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
 
@@ -19,12 +20,12 @@ const router = express.Router();
 router.post("/register", registerRules, handleValidation, register);
 router.post("/login", loginRules, handleValidation, login);
 
-// Email verification
+// Email verification (rate limit resend to 5 requests per 10 mins)
 router.post("/verify-email", verifyEmail);
-router.post("/resend-otp", resendOTP);
+router.post("/resend-otp", otpRateLimiter(5, 10), resendOTP);
 
-// Password reset
-router.post("/forgot-password", forgotPassword);
+// Password reset (rate limit to 5 requests per 10 mins to protect email quota)
+router.post("/forgot-password", otpRateLimiter(5, 10), forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 
 // Private routes (Student must be logged in to access these)

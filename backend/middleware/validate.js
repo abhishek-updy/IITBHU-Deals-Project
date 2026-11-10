@@ -56,7 +56,9 @@ export const productRules = [
       "Others",
     ])
     .withMessage("Please select a valid category"),
-  body("price").isFloat({ min: 0 }).withMessage("Price must be a positive number"),
+  body("price")
+    .isFloat({ min: 0, max: 500000 })
+    .withMessage("Price must be between ₹0 and ₹5,00,000"),
   body("condition")
     .isIn(["New", "Like New", "Good", "Fair", "Old"])
     .withMessage("Please select a valid condition"),

@@ -18,10 +18,16 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'iitbhu-deals',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'heic'],
   },
 });
 
-const upload = multer({ storage: storage });
+// Limit file upload size to 15MB (generous for direct uncompressed iPhone photos)
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 15 * 1024 * 1024, // 15 MB
+  },
+});
 
 export default upload;
