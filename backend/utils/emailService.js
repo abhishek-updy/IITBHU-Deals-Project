@@ -1,83 +1,121 @@
 import nodemailer from "nodemailer";
 
-// Build a transporter once and reuse it across all email sends
+// Build a transporter for local development (Nodemailer / Gmail SMTP)
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS, // Use an App Password, NOT your normal Gmail password
+      pass: process.env.EMAIL_PASS,
     },
   });
+};
+
+// Central email sending engine:
+// 1. In Production on cloud (Render): Uses Brevo HTTPS REST API (port 443 — never blocked by Render)
+// 2. In Local Dev: Uses Nodemailer with Gmail App Password (port 587)
+const sendEmail = async ({ to, subject, html }) => {
+  const senderEmail = process.env.EMAIL_USER || "iitbhu.deals@gmail.com";
+  const senderName = "IITBHU Deals";
+
+  // If BREVO_API_KEY is present, send via HTTPS API (Port 443)
+  if (process.env.BREVO_API_KEY) {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: senderName, email: senderEmail },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: html,
+      }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      console.error("Brevo API Error:", errData);
+      throw new Error(errData.message || "Failed to send email via Brevo API");
+    }
+
+    return true;
+  }
+
+  // Fallback to Nodemailer for local development
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: `"${senderName}" <${senderEmail}>`,
+    to,
+    subject,
+    html,
+  });
+  return true;
 };
 
 // ──────────────────────────────────────────────
 // Send 6-digit OTP for email verification
 // ──────────────────────────────────────────────
 export const sendVerificationOTP = async (toEmail, otp) => {
-  const transporter = createTransporter();
+  const html = `
+    <div style="font-family:Inter,sans-serif;background:#02120c;padding:40px;border-radius:16px;max-width:480px;margin:0 auto;border:1px solid #047857;">
+      <h2 style="color:#10b981;margin-bottom:8px;">Verify your email</h2>
+      <p style="color:#d1fae5;margin-bottom:24px;">
+        Welcome to <strong>IITBHU Deals</strong>! Use the OTP below to verify your college email address.
+        This code expires in <strong>15 minutes</strong>.
+      </p>
+      <div style="background:#022c22;border:2px solid #047857;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
+        <span style="font-size:36px;font-weight:800;letter-spacing:12px;color:#10b981;">${otp}</span>
+      </div>
+      <p style="color:#6ee7b7;font-size:13px;">
+        If you did not create an account, you can safely ignore this email.
+      </p>
+      <hr style="border:1px solid #047857;margin:24px 0;" />
+      <p style="color:#34d399;font-size:12px;text-align:center;">IITBHU Deals — Exclusive marketplace for IIT (BHU) students</p>
+    </div>
+  `;
 
-  const mailOptions = {
-    from: `"IITBHU Deals" <${process.env.EMAIL_USER}>`,
+  await sendEmail({
     to: toEmail,
     subject: "Verify your IITBHU Deals account",
-    html: `
-      <div style="font-family:Inter,sans-serif;background:#02120c;padding:40px;border-radius:16px;max-width:480px;margin:0 auto;border:1px solid #047857;">
-        <h2 style="color:#10b981;margin-bottom:8px;">Verify your email</h2>
-        <p style="color:#d1fae5;margin-bottom:24px;">
-          Welcome to <strong>IITBHU Deals</strong>! Use the OTP below to verify your college email address.
-          This code expires in <strong>15 minutes</strong>.
-        </p>
-        <div style="background:#022c22;border:2px solid #047857;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
-          <span style="font-size:36px;font-weight:800;letter-spacing:12px;color:#10b981;">${otp}</span>
-        </div>
-        <p style="color:#6ee7b7;font-size:13px;">
-          If you did not create an account, you can safely ignore this email.
-        </p>
-        <hr style="border:1px solid #047857;margin:24px 0;" />
-        <p style="color:#34d399;font-size:12px;text-align:center;">IITBHU Deals — Exclusive marketplace for IIT (BHU) students</p>
-      </div>
-    `,
-  };
-
-  await transporter.sendMail(mailOptions);
+    html,
+  });
 };
 
 // ──────────────────────────────────────────────
 // Send password reset link
 // ──────────────────────────────────────────────
 export const sendPasswordResetEmail = async (toEmail, resetURL) => {
-  const transporter = createTransporter();
+  const html = `
+    <div style="font-family:Inter,sans-serif;background:#02120c;padding:40px;border-radius:16px;max-width:480px;margin:0 auto;border:1px solid #047857;">
+      <h2 style="color:#10b981;margin-bottom:8px;">Reset your password</h2>
+      <p style="color:#d1fae5;margin-bottom:24px;">
+        We received a request to reset the password for your <strong>IITBHU Deals</strong> account.
+        Click the button below to set a new password. This link expires in <strong>1 hour</strong>.
+      </p>
+      <div style="text-align:center;margin-bottom:24px;">
+        <a href="${resetURL}"
+           style="display:inline-block;background:#10b981;color:#02120c;font-weight:700;font-size:16px;padding:14px 32px;border-radius:10px;text-decoration:none;">
+          Reset Password
+        </a>
+      </div>
+      <p style="color:#6ee7b7;font-size:13px;">
+        If the button doesn't work, copy and paste this link into your browser:<br/>
+        <a href="${resetURL}" style="color:#34d399;">${resetURL}</a>
+      </p>
+      <p style="color:#6ee7b7;font-size:13px;margin-top:16px;">
+        If you did not request a password reset, you can safely ignore this email.
+      </p>
+      <hr style="border:1px solid #047857;margin:24px 0;" />
+      <p style="color:#34d399;font-size:12px;text-align:center;">IITBHU Deals — Exclusive marketplace for IIT (BHU) students</p>
+    </div>
+  `;
 
-  const mailOptions = {
-    from: `"IITBHU Deals" <${process.env.EMAIL_USER}>`,
+  await sendEmail({
     to: toEmail,
     subject: "Reset your IITBHU Deals password",
-    html: `
-      <div style="font-family:Inter,sans-serif;background:#02120c;padding:40px;border-radius:16px;max-width:480px;margin:0 auto;border:1px solid #047857;">
-        <h2 style="color:#10b981;margin-bottom:8px;">Reset your password</h2>
-        <p style="color:#d1fae5;margin-bottom:24px;">
-          We received a request to reset the password for your <strong>IITBHU Deals</strong> account.
-          Click the button below to set a new password. This link expires in <strong>1 hour</strong>.
-        </p>
-        <div style="text-align:center;margin-bottom:24px;">
-          <a href="${resetURL}"
-             style="display:inline-block;background:#10b981;color:#02120c;font-weight:700;font-size:16px;padding:14px 32px;border-radius:10px;text-decoration:none;">
-            Reset Password
-          </a>
-        </div>
-        <p style="color:#6ee7b7;font-size:13px;">
-          If the button doesn't work, copy and paste this link into your browser:<br/>
-          <a href="${resetURL}" style="color:#34d399;">${resetURL}</a>
-        </p>
-        <p style="color:#6ee7b7;font-size:13px;margin-top:16px;">
-          If you did not request a password reset, you can safely ignore this email.
-        </p>
-        <hr style="border:1px solid #047857;margin:24px 0;" />
-        <p style="color:#34d399;font-size:12px;text-align:center;">IITBHU Deals — Exclusive marketplace for IIT (BHU) students</p>
-      </div>
-    `,
-  };
-
-  await transporter.sendMail(mailOptions);
+    html,
+  });
 };
