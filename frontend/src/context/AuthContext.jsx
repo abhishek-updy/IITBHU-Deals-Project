@@ -15,14 +15,15 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On first load, ask the backend if the httpOnly cookie still represents a
-  // valid session. Silently ignore failures — it just means we're logged out.
+  // On first load, ask the backend if the session is still valid.
+  // Silently ignore failures — it just means we're logged out.
   useEffect(() => {
     (async () => {
       try {
         const profile = await fetchProfile();
         setUser(profile);
       } catch (error) {
+        localStorage.removeItem("token");
         setUser(null);
       } finally {
         setLoading(false);
@@ -39,6 +40,9 @@ export const AuthProvider = ({ children }) => {
       err.email = result.email;
       throw err;
     }
+    if (result.token) {
+      localStorage.setItem("token", result.token);
+    }
     setUser(result.data);
     toast.success(`Welcome back, ${result.data.name.split(" ")[0]}!`);
     return result.data;
@@ -53,13 +57,21 @@ export const AuthProvider = ({ children }) => {
   // Called from VerifyEmail page after successful OTP check
   const verifyAndLogin = useCallback(async (email, otp) => {
     const result = await verifyEmailService({ email, otp });
+    if (result.token) {
+      localStorage.setItem("token", result.token);
+    }
     setUser(result.data);
     toast.success("Email verified! Welcome to IITBHU Deals 🎉");
     return result.data;
   }, []);
 
   const logout = useCallback(async () => {
-    await logoutUser();
+    try {
+      await logoutUser();
+    } catch (e) {
+      // ignore
+    }
+    localStorage.removeItem("token");
     setUser(null);
     toast.success("Logged out successfully");
   }, []);

@@ -7,6 +7,16 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Automatically attach Authorization Bearer token from localStorage to every request.
+// This guarantees authentication works across domains even if the browser blocks third-party cookies!
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Normalize error messages so components can just read err.message.
 // Also preserve extra fields like requiresVerification so auth flows work.
 api.interceptors.response.use(

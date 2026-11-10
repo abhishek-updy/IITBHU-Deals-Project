@@ -5,11 +5,14 @@ import User from "../models/User.js";
 // If the token is valid, attach the user's details to the request so other functions can use it.
 export const protect = async (req, res, next) => {
   try {
-    let token = req.cookies?.token;
+    let token = null;
 
-    // Fallback: Check if the token was sent in the headers instead of cookies
-    if (!token && req.headers.authorization?.startsWith("Bearer")) {
+    // Check Authorization header first (most reliable across all modern browsers)
+    if (req.headers.authorization?.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
+    } else if (req.cookies?.token) {
+      // Fallback to cookie
+      token = req.cookies.token;
     }
 
     if (!token) {

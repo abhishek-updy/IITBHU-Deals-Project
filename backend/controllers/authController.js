@@ -91,11 +91,12 @@ export const login = async (req, res, next) => {
       });
     }
 
-    generateToken(res, user._id);
+    const token = generateToken(res, user._id);
 
     res.status(200).json({
       success: true,
       message: "Login successful",
+      token,
       data: user,
     });
   } catch (error) {
@@ -193,11 +194,12 @@ export const verifyEmail = async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     // Auto log-in the user right after verification
-    generateToken(res, user._id);
+    const token = generateToken(res, user._id);
 
     res.status(200).json({
       success: true,
       message: "Email verified successfully! Welcome to IITBHU Deals.",
+      token,
       data: user,
     });
   } catch (error) {
