@@ -48,8 +48,9 @@ export const getProducts = async (req, res, next) => {
     const skip = (pageNum - 1) * limitNum;
 
     // Run both database queries at the same time to save time
+    // Exclude seller phone numbers from public browse/search listings for privacy
     const [products, total] = await Promise.all([
-      Product.find(query).sort(sortOption).skip(skip).limit(limitNum),
+      Product.find(query).select("-seller.phone").sort(sortOption).skip(skip).limit(limitNum),
       Product.countDocuments(query),
     ]);
 
@@ -70,7 +71,7 @@ export const getProducts = async (req, res, next) => {
 
 // Get full details of a single product along with similar items
 // Route: GET /api/products/:id
-// Access: Public
+// Access: Public (phone number masked for unauthenticated requests)
 export const getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -84,10 +85,18 @@ export const getProductById = async (req, res, next) => {
       _id: { $ne: product._id }, // Exclude the current product
       status: "Available",
     })
+      .select("-seller.phone")
       .limit(4)
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ success: true, data: product, related: relatedProducts });
+    const productObj = product.toObject();
+
+    // Privacy protection: Only verified logged-in students can view the seller's phone number
+    if (!req.user && productObj.seller) {
+      productObj.seller.phone = null;
+    }
+
+    res.status(200).json({ success: true, data: productObj, related: relatedProducts });
   } catch (error) {
     next(error);
   }

@@ -23,7 +23,7 @@ export const registerRules = [
   body("phone").trim().matches(/^[0-9]{10}$/).withMessage("Phone number must be 10 digits"),
   body("department").trim().notEmpty().withMessage("Department is required"),
   body("year")
-    .isIn(["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year"])
+    .isIn(["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Final Year"])
     .withMessage("Please select a valid year"),
   body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
   body("confirmPassword").custom((value, { req }) => {

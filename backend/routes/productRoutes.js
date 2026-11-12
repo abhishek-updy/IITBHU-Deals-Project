@@ -9,7 +9,7 @@ import {
   getMyProducts,
   getProductOwnerId,
 } from "../controllers/productController.js";
-import { protect, isOwner } from "../middleware/auth.js";
+import { protect, isOwner, optionalAuth } from "../middleware/auth.js";
 import { productRules, handleValidation } from "../middleware/validate.js";
 import upload from "../middleware/cloudinary.js"; // Added cloudinary middleware, cuz local per hoo nhi payega
 
@@ -18,9 +18,9 @@ const router = express.Router();
 // Private route: Get the logged-in student's own products
 router.get("/user/me", protect, getMyProducts);
 
-// Public routes: Anyone can search and view products
-router.get("/", getProducts);
-router.get("/:id", getProductById);
+// Public routes: Anyone can search and view products (optionalAuth ensures logged-in users see seller contact)
+router.get("/", optionalAuth, getProducts);
+router.get("/:id", optionalAuth, getProductById);
 
 // Private route: Create a new product listing (allows up to 6 images)
 router.post("/", protect, upload.array("images", 6), productRules, handleValidation, createProduct);

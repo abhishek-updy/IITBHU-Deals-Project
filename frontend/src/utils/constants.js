@@ -13,7 +13,7 @@ export const CATEGORIES = [
 
 export const CONDITIONS = ["New", "Like New", "Good", "Fair", "Old"];
 
-export const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year"];
+export const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"];
 
 export const SORT_OPTIONS = [
   { value: "newest", label: "Newest First" },

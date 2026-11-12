@@ -36,29 +36,18 @@ const STEPS = [
   { title: "Meet, pay, done", text: "Mark it sold once the handover is complete." },
 ];
 
-const TESTIMONIALS = [
-  { name: "Ananya R.", role: "Final Year, CSE", quote: "Sold my old lab kit and calculator in two days — way faster than the WhatsApp group ever was." },
-  { name: "Rohit V.", role: "3rd Year, Mechanical", quote: "Found a cycle for half the showroom price, listed by a senior who was graduating." },
-  { name: "Meera S.", role: "2nd Year, ECE", quote: "Finally a place where I can actually filter by price instead of scrolling forever." },
-];
-
 const Landing = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [latest, setLatest] = useState([]);
-  const [popular, setPopular] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0 });
 
   useEffect(() => {
     (async () => {
       try {
-        const [latestRes, popularRes] = await Promise.all([
-          getProducts({ limit: 4, sort: "newest" }),
-          getProducts({ limit: 4, sort: "oldest" }),
-        ]);
+        const latestRes = await getProducts({ limit: 4, sort: "newest" });
         setLatest(latestRes.data);
-        setPopular(popularRes.data);
         setStats({ total: latestRes.pagination?.total || 0 });
       } catch (error) {
         // Landing page should still render even if the API is briefly unavailable.
@@ -122,7 +111,7 @@ const Landing = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-emerald-500/80 text-xs font-bold uppercase tracking-wider">Seller</span>
-                  <span className="text-emerald-100/90 text-sm">Final Year, ECE</span>
+                  <span className="text-emerald-100/90 text-sm">4th Year, Meta</span>
                 </div>
               </div>
               <div className="absolute -top-4 -right-4 bg-[#10b981] text-white text-[10px] font-extrabold px-3 py-1 rounded-full shadow-lg border border-emerald-400 transform rotate-12">
@@ -146,7 +135,7 @@ const Landing = () => {
               <div className="text-sm font-medium text-emerald-200/60 uppercase tracking-wider">Categories</div>
             </div>
             <div className="text-center border-t md:border-t-0 md:border-l border-[#047857]/30 pt-6 md:pt-0">
-              <div className="text-3xl font-extrabold text-[#10b981] mb-1">1,200+</div>
+              <div className="text-3xl font-extrabold text-[#10b981] mb-1">200+</div>
               <div className="text-sm font-medium text-emerald-200/60 uppercase tracking-wider">Students Joined</div>
             </div>
             <div className="text-center border-t md:border-t-0 border-l border-[#047857]/30 pt-6 md:pt-0">
@@ -197,23 +186,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Popular products */}
-      {popular.length > 0 && (
-        <section className="py-20 bg-[#02120c]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <span className="text-[#10b981] font-bold tracking-wider uppercase text-xs mb-2 block">Worth a look</span>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white">Popular Products</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {popular.map((p) => (
-                <ProductCard key={p._id} product={p} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Why IITBHU Deals */}
       <section className="py-20 bg-[#022c22]/20 border-y border-[#047857]/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -251,32 +223,6 @@ const Landing = () => {
                 </div>
                 <h4 className="text-lg font-bold text-white mb-2">{step.title}</h4>
                 <p className="text-sm text-emerald-100/60 leading-relaxed px-4">{step.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-20 bg-[#022c22]/10 border-t border-[#047857]/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="text-[#10b981] font-bold tracking-wider uppercase text-xs mb-2 block">From students</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white">What users are saying</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((t) => (
-              <div className="bg-[#02120c] border border-[#047857]/40 p-8 rounded-2xl flex flex-col h-full shadow-lg" key={t.name}>
-                <p className="text-emerald-100/80 italic mb-8 flex-grow leading-relaxed">"{t.quote}"</p>
-                <div className="flex items-center gap-4 pt-6 border-t border-[#047857]/30">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#10b981] to-[#047857] flex items-center justify-center text-white font-bold text-lg shadow-inner">
-                    {t.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="text-white font-bold">{t.name}</div>
-                    <div className="text-emerald-400/70 text-xs">{t.role}</div>
-                  </div>
-                </div>
               </div>
             ))}
           </div>

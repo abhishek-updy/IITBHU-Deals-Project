@@ -59,18 +59,18 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className={labelClasses} htmlFor="name">Full Name</label>
-              <input id="name" name="name" autoComplete="name" className={inputClasses} placeholder="Aditi Sharma" value={form.name} onChange={handleChange} required />
+              <input id="name" name="name" autoComplete="name" className={inputClasses} placeholder="Your Name" value={form.name} onChange={handleChange} required />
             </div>
 
             <div>
               <label className={labelClasses} htmlFor="email">College Email</label>
-              <input id="email" name="email" type="email" autoComplete="email" className={inputClasses} placeholder="you@college.edu" value={form.email} onChange={handleChange} required />
+              <input id="email" name="email" type="email" autoComplete="email" className={inputClasses} placeholder="you@iitbhu.ac.in" value={form.email} onChange={handleChange} required />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className={labelClasses} htmlFor="phone">Phone Number</label>
-                <input id="phone" name="phone" autoComplete="tel" className={inputClasses} placeholder="9876543210" value={form.phone} onChange={handleChange} required />
+                <input id="phone" name="phone" autoComplete="tel" className={inputClasses} placeholder="Your 10-digit phone number" value={form.phone} onChange={handleChange} required />
               </div>
               <div>
                 <label className={labelClasses} htmlFor="department">Department</label>

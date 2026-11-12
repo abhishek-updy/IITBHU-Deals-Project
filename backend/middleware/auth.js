@@ -34,6 +34,31 @@ export const protect = async (req, res, next) => {
   }
 };
 
+// Optional auth: Checks if a valid token exists without failing if it doesn't.
+// If valid, attaches req.user so controllers know the user is authenticated.
+export const optionalAuth = async (req, res, next) => {
+  try {
+    let token = null;
+
+    if (req.headers.authorization?.startsWith("Bearer")) {
+      token = req.headers.authorization.split(" ")[1];
+    } else if (req.cookies?.token) {
+      token = req.cookies.token;
+    }
+
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.userId);
+      if (user) {
+        req.user = user;
+      }
+    }
+  } catch (error) {
+    // If token is invalid or expired, ignore and proceed as unauthenticated
+  }
+  next();
+};
+
 // Ownership check: Make sure the logged-in student actually owns the item 
 // before allowing them to edit, delete, or mark it as sold.
 export const isOwner = (getOwnerId) => async (req, res, next) => {

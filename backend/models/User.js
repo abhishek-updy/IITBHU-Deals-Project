@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema(
     year: {
       type: String,
       required: [true, "Year is required"],
-      enum: ["1st Year", "2nd Year", "3rd Year", "4th Year", "Final Year"], // Covers 5-year IDD under Final Year
+      enum: ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Final Year"],
     },
     password: {
       type: String,

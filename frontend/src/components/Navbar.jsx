@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { FiSun, FiMoon, FiMenu, FiX } from "react-icons/fi";
+import { FiMenu, FiX } from "react-icons/fi";
 import { useAuth } from "../hooks/useAuth.js";
-import { useTheme } from "../hooks/useTheme.js";
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -100,17 +98,8 @@ const Navbar = () => {
           )}
         </nav>
 
-        {/* Right Actions (Theme Toggle, User Avatar, Burger Menu) */}
+        {/* Right Actions (User Avatar, Burger Menu) */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            aria-label="Toggle dark and light theme"
-            title="Toggle theme"
-            className="p-2 rounded-lg bg-[#02120c] border border-[#047857]/50 text-emerald-400 hover:text-white hover:border-emerald-500 transition-colors"
-          >
-            {theme === "light" ? <FiMoon className="w-4 h-4" /> : <FiSun className="w-4 h-4" />}
-          </button>
-
           {isAuthenticated && user && (
             <Link
               to="/profile"
