@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import ScrollToTop from "./components/ScrollToTop.jsx";
 
 // Pages
 import Landing from "./pages/Landing.jsx";
@@ -22,6 +23,9 @@ import NotFound from "./pages/NotFound.jsx";
 function App() {
   return (
     <>
+      {/* Auto scroll window to top on route change */}
+      <ScrollToTop />
+
       {/* Dark Greenish Themed Notifications */}
       <Toaster
         position="top-right"
