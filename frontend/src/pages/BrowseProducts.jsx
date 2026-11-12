@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FiSearch } from "react-icons/fi";
 import MainLayout from "../layouts/MainLayout.jsx";
@@ -26,11 +26,12 @@ const BrowseProducts = () => {
   const [sort, setSort] = useState(searchParams.get("sort") || "newest");
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
 
-  const [products, setProducts] = useState([]);
+  const [serverProducts, setServerProducts] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Debounce search input by 250ms for buttery-smooth typing and live auto-filter
+  // Debounce search input by 250ms for smooth background syncing
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -38,8 +39,36 @@ const BrowseProducts = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
+  // Instant local filtering (0ms response) on existing products as the user types
+  const displayedProducts = useMemo(() => {
+    if (!search || !search.trim()) return serverProducts;
+    const term = search.toLowerCase().trim();
+    const localMatches = serverProducts.filter((p) => {
+      const title = p.title?.toLowerCase() || "";
+      const cat = p.category?.toLowerCase() || "";
+      const seller = p.seller?.name?.toLowerCase() || "";
+      const dept = p.seller?.department?.toLowerCase() || "";
+      const desc = p.description?.toLowerCase() || "";
+      return (
+        title.includes(term) ||
+        cat.includes(term) ||
+        seller.includes(term) ||
+        dept.includes(term) ||
+        desc.includes(term)
+      );
+    });
+
+    // If local products match the typed letters, narrow down instantly!
+    if (localMatches.length > 0) return localMatches;
+
+    // While background search is still fetching, keep previous view so screen never jumps
+    if (isSearching) return serverProducts;
+
+    return [];
+  }, [search, serverProducts, isSearching]);
+
   const fetchProducts = useCallback(async () => {
-    setLoading(true);
+    setIsSearching(true);
     try {
       const params = {
         search: debouncedSearch || undefined,
@@ -52,12 +81,13 @@ const BrowseProducts = () => {
         limit: 12,
       };
       const res = await getProducts(params);
-      setProducts(res.data);
+      setServerProducts(res.data);
       setPagination(res.pagination);
     } catch (error) {
       // Keep the page usable even if a request fails; the empty state covers it.
     } finally {
-      setLoading(false);
+      setIsSearching(false);
+      setInitialLoading(false);
     }
   }, [debouncedSearch, filters, sort, page]);
 
@@ -102,7 +132,7 @@ const BrowseProducts = () => {
         {/* Search & Sort Bar */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-8 bg-[#022c22]/60 p-4 rounded-2xl border border-[#047857]/40 backdrop-blur-sm shadow-lg">
           
-          <div className="flex items-center w-full bg-[#02120c] border border-[#047857]/50 rounded-xl px-4 py-2.5 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500/50 shadow-sm transition-all">
+          <div className="relative flex items-center w-full bg-[#02120c] border border-[#047857]/50 rounded-xl px-4 py-2.5 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500/50 shadow-sm transition-all">
             <FiSearch className="mr-3 text-emerald-500/70 shrink-0 w-5 h-5" />
             <input
               type="text"
@@ -112,8 +142,27 @@ const BrowseProducts = () => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-transparent border-none outline-none text-white placeholder-emerald-600/70 font-medium text-sm"
+              className="w-full bg-transparent border-none outline-none text-white placeholder-emerald-600/70 font-medium text-sm pr-6"
             />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            {!isSearching && search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setDebouncedSearch("");
+                  setPage(1);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500/60 hover:text-white text-xs font-bold transition-colors"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <select
@@ -142,21 +191,23 @@ const BrowseProducts = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#047857]/30">
               <span className="text-sm font-semibold text-emerald-300">
-                {loading ? "Loading..." : `${pagination.total} product${pagination.total === 1 ? "" : "s"} found`}
+                {initialLoading
+                  ? "Loading..."
+                  : `${pagination.total} product${pagination.total === 1 ? "" : "s"} found`}
               </span>
             </div>
 
-            {loading ? (
+            {initialLoading ? (
               <Loader />
-            ) : products.length === 0 ? (
+            ) : displayedProducts.length === 0 ? (
               <EmptyState
                 title="No products match your search"
                 message="Try adjusting your filters or search terms."
               />
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((p) => (
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${isSearching ? "opacity-75" : "opacity-100"}`}>
+                  {displayedProducts.map((p) => (
                     <ProductCard key={p._id} product={p} />
                   ))}
                 </div>
