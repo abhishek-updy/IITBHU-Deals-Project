@@ -19,9 +19,17 @@ export const getProducts = async (req, res, next) => {
 
     const query = {};
 
-    // If the user typed something in the search bar, look for it in text-indexed fields
-    if (search) {
-      query.$text = { $search: search }; 
+    // Live substring / partial search across title, description, category, and seller details
+    if (search && search.trim()) {
+      const sanitized = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchRegex = new RegExp(sanitized, "i");
+      query.$or = [
+        { title: { $regex: searchRegex } },
+        { description: { $regex: searchRegex } },
+        { category: { $regex: searchRegex } },
+        { "seller.name": { $regex: searchRegex } },
+        { "seller.department": { $regex: searchRegex } },
+      ];
     }
 
     if (category) query.category = category;

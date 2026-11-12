@@ -16,6 +16,7 @@ const BrowseProducts = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get("search") || "");
   const [filters, setFilters] = useState({
     category: searchParams.get("category") || "",
     minPrice: searchParams.get("minPrice") || "",
@@ -29,11 +30,19 @@ const BrowseProducts = () => {
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
 
+  // Debounce search input by 250ms for buttery-smooth typing and live auto-filter
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         category: filters.category || undefined,
         minPrice: filters.minPrice || undefined,
         maxPrice: filters.maxPrice || undefined,
@@ -50,12 +59,12 @@ const BrowseProducts = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filters, sort, page]);
+  }, [debouncedSearch, filters, sort, page]);
 
   useEffect(() => {
     fetchProducts();
     const params = {};
-    if (search) params.search = search;
+    if (debouncedSearch) params.search = debouncedSearch;
     if (filters.category) params.category = filters.category;
     if (filters.minPrice) params.minPrice = filters.minPrice;
     if (filters.maxPrice) params.maxPrice = filters.maxPrice;
@@ -64,7 +73,7 @@ const BrowseProducts = () => {
     if (page !== 1) params.page = page;
     setSearchParams(params, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, filters, sort, page]);
+  }, [debouncedSearch, filters, sort, page]);
 
   const handleFilterChange = (next) => {
     setFilters(next);
@@ -74,6 +83,7 @@ const BrowseProducts = () => {
   const handleReset = () => {
     setFilters(DEFAULT_FILTERS);
     setSearch("");
+    setDebouncedSearch("");
     setPage(1);
   };
 
